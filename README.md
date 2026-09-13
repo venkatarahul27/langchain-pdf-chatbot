@@ -1,28 +1,21 @@
 # LangChain PDF Chatbot
 
-Conversational AI chatbot that lets you upload PDFs and ask questions about their content. Built with LangChain, ChromaDB for vector storage, and Streamlit for the UI. Supports multi-document conversations with source citations.
+A Streamlit RAG prototype for uploading PDFs and asking questions about their contents. Uses LangChain, local sentence-transformer embeddings, ChromaDB retrieval, and Claude to generate answers with retrieved source excerpts.
 
 ## Features
 
 - **PDF Upload & Processing** — drag-and-drop PDF upload with automatic text extraction and chunking
-- **Conversational Memory** — maintains chat history for follow-up questions
-- **Source Citations** — every answer includes page numbers and source excerpts
+- **Chat Interface** — displays messages within the Streamlit session
+- **Source Excerpts** — displays retrieved passages and page metadata when source documents are returned
 - **Multi-Document Support** — upload and query across multiple PDFs simultaneously
-- **Vector Search** — semantic search using ChromaDB embeddings for accurate retrieval
-- **Streaming Responses** — real-time token streaming for a responsive chat experience
+- **Vector Search** — retrieves document chunks from ChromaDB using local embeddings
 
 ## Architecture
 
-```
-┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
-│  Streamlit   │────▶│  LangChain   │────▶│  Claude /       │
-│  Frontend    │     │  RAG Chain   │     │  OpenAI LLM     │
-└─────────────┘     └──────┬───────┘     └─────────────────┘
-                           │
-                    ┌──────▼───────┐
-                    │  ChromaDB    │
-                    │  Vector Store│
-                    └──────────────┘
+```text
+PDF upload -> PyPDFLoader -> Text chunks -> Local embeddings -> ChromaDB
+                                                                  |
+Question -> LangChain retrieval chain -> Claude -> Answer + source excerpts
 ```
 
 ## Quick Start
@@ -46,11 +39,11 @@ streamlit run app/main.py
 
 | Component | Technology |
 |-----------|-----------|
-| LLM | Claude 3.5 Sonnet / GPT-4 |
+| LLM | Claude via `ChatAnthropic`; model configured in `app/chain.py` |
 | Framework | LangChain |
 | Vector DB | ChromaDB |
 | Embeddings | HuggingFace sentence-transformers |
-| PDF Parsing | PyPDF2 |
+| PDF Parsing | LangChain `PyPDFLoader` |
 | UI | Streamlit |
 | Language | Python 3.11+ |
 
@@ -60,7 +53,7 @@ streamlit run app/main.py
 langchain-pdf-chatbot/
 ├── app/
 │   ├── main.py              # Streamlit app entry point
-│   ├── pdf_processor.py     # PDF loading, splitting, embedding
+│   ├── pdf_processor.py     # PDF loading and splitting
 │   ├── chain.py             # LangChain RAG chain setup
 │   └── vector_store.py      # ChromaDB operations
 ├── requirements.txt
@@ -76,6 +69,18 @@ langchain-pdf-chatbot/
 4. **Query** — user asks a question; relevant chunks are retrieved via similarity search
 5. **Answer** — LLM generates an answer grounded in the retrieved context with source citations
 
+## Current Limitations
+
+- Answers render after the model call completes; token streaming is not implemented.
+- The retrieval chain is recreated for each question. Follow-up conversation behavior needs dedicated testing.
+- Retrieved excerpts help inspect an answer but do not guarantee its accuracy or complete citation coverage.
+- The vector store persists to a shared local `./chroma_db` directory. Separate user and document collections are future work.
+- Automated tests and retrieval-quality evaluations have not been added yet.
+
+## Contributing
+
+Improvements to session handling, retrieval evaluation, and source display are welcome. Include a small reproducible example with behavior changes.
+
 ## License
 
-MIT
+[MIT](LICENSE)
